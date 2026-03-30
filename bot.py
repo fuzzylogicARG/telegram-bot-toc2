@@ -27,10 +27,7 @@ QR_CRYPTO = "qr.png"
 QR_CASHAPP = "qr2.png"
 
 # Estados simples en memoria
-# paid flow: method -> username -> email -> screenshot -> extra
-# support flow: category -> username -> email -> details
 user_states = {}
-
 
 BUY_WORDS = [
     "buy", "access", "pay", "join", "subscribe",
@@ -76,6 +73,7 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("💵 CashApp Payment", callback_data="cashapp")],
         [InlineKeyboardButton("🌐 THECANDIDVERSE.COM", callback_data="candidverse")],
         [InlineKeyboardButton("🆘 Support", callback_data="help")],
+        [InlineKeyboardButton("📜 Guidelines", callback_data="guidelines")],
     ])
 
 
@@ -269,6 +267,126 @@ async def send_candidverse(target):
         "• Requests without links may be delayed"
     )
     await target.reply_text(text, reply_markup=candidverse_keyboard())
+
+
+async def send_guidelines(target):
+    text = (
+        "📜 TOC — OFFICIAL GUIDELINES\n\n"
+        "Effective: March 26, 2026\n\n"
+        "By accessing TOC, you agree to all rules, systems, and enforcement policies.\n"
+        "Access is conditional and may be revoked at any time.\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "⚙ SYSTEM SHIFT\n"
+        "• The point system is permanently discontinued\n"
+        "• No earning, buying, or redeeming points\n"
+        "• Platform operates through paid memberships, contests, licensing and partnerships\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "💳 POINT CONVERSIONS\n"
+        "• Purchased points may be converted to membership upon request\n"
+        "• Non-shooter points hold no monetary value\n"
+        "• Shooter conversions are paused until June 2026\n\n"
+        f"Requests:\n📧 {SUPPORT_EMAIL}\n📩 https://t.me/TOC_TCV_service_requests\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "💸 PAYMENTS & SHOOTER PAUSE\n"
+        "• Shooter payouts paused until June 2026\n"
+        "• Cause: chargebacks, fraud, processor instability\n"
+        "• Temporary compensation may include exposure, placement and licensing\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "🏆 CONTEST SYSTEM\n"
+        "• Shooters are rewarded via contests only\n"
+        "• Formats may include Best Walking, Best POV, Best Creative and seasonal features\n"
+        "• Rewards, when active, may include Cash App or Crypto\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "🔓 ACCESS MODEL\n"
+        "Free users:\n"
+        "• Preview only\n"
+        "• No downloads\n\n"
+        "Paid users:\n"
+        "• Full HD access\n"
+        "• Downloads\n"
+        "• Cloud + clubs\n"
+        "• No hidden unlock systems\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "👤 MEMBERSHIPS\n"
+        "Standard:\n"
+        "• 50GB cloud\n"
+        "• Medium speed\n"
+        "• 10-minute cooldown\n"
+        "• Uploads enabled\n\n"
+        "Premium Plus:\n"
+        "• 100GB cloud\n"
+        "• High-speed\n"
+        "• No wait\n"
+        "• Hall of Fame + hidden clubs\n\n"
+        "Pricing may scale by account age.\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "☁ CLOUD RULES\n"
+        "• Membership required\n"
+        "• Same email required\n"
+        "• Activation: 0–4 hours\n"
+        "• Abuse may result in restriction\n"
+        "• Limits enforced by tier\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "🎥 SHOOTERS & CONTRIBUTORS\n"
+        "Shooters:\n"
+        "• Must upload original content\n"
+        "• Maintain quality standards\n"
+        "• Participate in contests\n\n"
+        "Contributors:\n"
+        "• Must own rights to content\n"
+        "• Accept full liability\n"
+        "• Grant TOC a license to display and promote uploaded material\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "🚫 ENFORCEMENT\n"
+        "Immediate permanent ban for:\n"
+        "• Leaks / reselling / sharing\n"
+        "• Multiple accounts\n"
+        "• Chargebacks\n\n"
+        "Access is a privilege.\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "🛡 ADMIN AUTHORITY\n"
+        "TOC may:\n"
+        "• Modify rules\n"
+        "• Restrict accounts\n"
+        "• Change pricing\n"
+        "• Remove content\n\n"
+        "All decisions are final.\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "⚖ LIABILITY\n"
+        "Users are responsible for all actions and content.\n"
+        "TOC is not liable for user-submitted material.\n\n"
+
+        "━━━━━━━━━━━━━━━\n\n"
+
+        "FINAL STATEMENT\n"
+        "TOC exists to protect paying members and creators.\n"
+        "If you follow the system, you stay.\n"
+        "If you break it, you’re removed."
+    )
+
+    await target.reply_text(text, reply_markup=main_menu_keyboard())
 
 
 async def start_paid_flow(target, user_id: int):
@@ -490,6 +608,10 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
         clear_user_state(user.id)
         await send_candidverse(query.message)
 
+    elif data == "guidelines":
+        clear_user_state(user.id)
+        await send_guidelines(query.message)
+
     elif data == "paid_method_usdt":
         user_states[user.id]["data"]["method"] = "USDT"
         user_states[user.id]["step"] = "username"
@@ -598,6 +720,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await send_support_intro(update.message)
         elif "candidverse" in text or "thecandidverse" in text:
             await send_candidverse(update.message)
+        elif "guidelines" in text or "rules" in text:
+            await send_guidelines(update.message)
         else:
             await send_welcome(update.message)
 

@@ -10,18 +10,27 @@ from telegram.ext import (
 import os
 
 TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 
 if not TOKEN:
     raise ValueError("Falta BOT_TOKEN")
 
 USDT_LINK = "https://s.binance.com/iXbyQcVL"
 BTC_LINK = "https://s.binance.com/xuzlIvp2"
+CANDIDVERSE_49_LINK = "https://s.binance.com/ALQ8lAU1"
+CANDIDVERSE_99_LINK = "https://s.binance.com/qWgp2YND"
+
 SUPPORT_EMAIL = "toc.services.requests@gmail.com"
 SUPPORT_TELEGRAM = "@bermeloh2"
+
 QR_CRYPTO = "qr.png"
 QR_CASHAPP = "qr2.png"
 
+# Estados simples en memoria
+# paid flow: method -> username -> email -> screenshot -> extra
+# support flow: category -> username -> email -> details
 user_states = {}
+
 
 BUY_WORDS = [
     "buy", "access", "pay", "join", "subscribe",
@@ -50,14 +59,13 @@ HELP_WORDS = [
     "cloud", "nube"
 ]
 
-MEMBER_WORDS = [
-    "member", "already member", "i am member",
-    "miembro", "ya soy miembro", "soy miembro"
-]
-
 
 def contains_any(text: str, words: list[str]) -> bool:
     return any(word in text for word in words)
+
+
+def safe_username(user) -> str:
+    return f"@{user.username}" if user.username else "No username"
 
 
 def main_menu_keyboard() -> InlineKeyboardMarkup:
@@ -66,8 +74,8 @@ def main_menu_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("✅ I Already Paid", callback_data="already_paid")],
         [InlineKeyboardButton("💎 Crypto Payment", callback_data="crypto")],
         [InlineKeyboardButton("💵 CashApp Payment", callback_data="cashapp")],
+        [InlineKeyboardButton("🌐 THECANDIDVERSE.COM", callback_data="candidverse")],
         [InlineKeyboardButton("🆘 Support", callback_data="help")],
-        [InlineKeyboardButton("✅ I am a Member", callback_data="member")],
     ])
 
 
@@ -87,6 +95,15 @@ def cashapp_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("✅ I Already Paid", callback_data="already_paid")],
         [InlineKeyboardButton("💎 Crypto Payment Instead", callback_data="crypto")],
         [InlineKeyboardButton("🆘 Support", callback_data="help")],
+        [InlineKeyboardButton("⬅ Back to Menu", callback_data="menu")],
+    ])
+
+
+def candidverse_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("💰 Buy 5 Videos - $49.99", url=CANDIDVERSE_49_LINK)],
+        [InlineKeyboardButton("🚀 Buy 10 Videos - $99.99", url=CANDIDVERSE_99_LINK)],
+        [InlineKeyboardButton("📩 Support", callback_data="help")],
         [InlineKeyboardButton("⬅ Back to Menu", callback_data="menu")],
     ])
 
@@ -115,6 +132,29 @@ def cancel_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton("❌ Cancel", callback_data="cancel_flow")],
         [InlineKeyboardButton("⬅ Back to Menu", callback_data="menu")],
     ])
+
+
+def clear_user_state(user_id: int):
+    if user_id in user_states:
+        del user_states[user_id]
+
+
+async def notify_admin_text(context: ContextTypes.DEFAULT_TYPE, text: str):
+    if not ADMIN_CHAT_ID:
+        return
+    try:
+        await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=text)
+    except Exception as e:
+        print(f"[ADMIN TEXT ERROR] {e}")
+
+
+async def notify_admin_photo(context: ContextTypes.DEFAULT_TYPE, photo_file_id: str, caption: str):
+    if not ADMIN_CHAT_ID:
+        return
+    try:
+        await context.bot.send_photo(chat_id=ADMIN_CHAT_ID, photo=photo_file_id, caption=caption)
+    except Exception as e:
+        print(f"[ADMIN PHOTO ERROR] {e}")
 
 
 async def send_welcome(target):
@@ -187,31 +227,48 @@ async def send_cashapp(target):
         )
 
 
-async def send_member(target):
-    text = (
-        "✅ MEMBER SUPPORT\n\n"
-        "For faster assistance, please include:\n"
-        "• TOC Username\n"
-        "• TOC2.Cloud Email\n"
-        "• Membership type\n"
-        "• Detailed description of the problem\n\n"
-        "You can also use the guided support flow below."
-    )
-
-    await target.reply_text(text, reply_markup=main_menu_keyboard())
-
-
 async def send_support_intro(target):
     await target.reply_text(
-        "🆘 SUPPORT FLOW\n\n"
-        "Choose your issue type:",
+        "🆘 SUPPORT\n\n"
+        "Choose your issue type below.\n\n"
+        "If you are already a member, use:\n"
+        "• Cloud activation\n"
+        "• Membership issue\n"
+        "• Payment verification\n"
+        "• Access problem",
         reply_markup=support_category_keyboard()
     )
 
 
-def clear_user_state(user_id: int):
-    if user_id in user_states:
-        del user_states[user_id]
+async def send_candidverse(target):
+    text = (
+        "🌐 THECANDIDVERSE.COM\n\n"
+        "🔥 CUSTOM VIDEO ACCESS\n\n"
+        "Choose your option:\n\n"
+        "━━━━━━━━━━━━━━━\n\n"
+        "💰 5 VIDEOS PACK\n"
+        "Price: $49.99\n\n"
+        "• No bundles accepted\n"
+        "• You choose the videos\n"
+        "• Send links after payment\n\n"
+        "━━━━━━━━━━━━━━━\n\n"
+        "🚀 FULL ACCESS PACKAGE\n"
+        "Price: $99.99\n\n"
+        "• Up to 10 videos / links\n"
+        "• Full custom selection\n"
+        "• Priority processing\n\n"
+        "━━━━━━━━━━━━━━━\n\n"
+        "📩 AFTER PAYMENT\n\n"
+        "Send your links or requests to:\n"
+        f"📧 {SUPPORT_EMAIL}\n"
+        f"📩 {SUPPORT_TELEGRAM}\n\n"
+        "━━━━━━━━━━━━━━━\n\n"
+        "⚠️ IMPORTANT\n\n"
+        "• No bundles allowed\n"
+        "• Only individual video selection\n"
+        "• Requests without links may be delayed"
+    )
+    await target.reply_text(text, reply_markup=candidverse_keyboard())
 
 
 async def start_paid_flow(target, user_id: int):
@@ -257,7 +314,7 @@ async def ask_paid_email(target):
 async def ask_paid_screenshot(target):
     await target.reply_text(
         "Now send your payment screenshot.\n\n"
-        "You can send it as an image, or type a short note if needed.",
+        "You can send it as an image.",
         reply_markup=cancel_keyboard()
     )
 
@@ -271,8 +328,9 @@ async def ask_paid_extra(target):
     )
 
 
-async def finish_paid_flow(target, user_id: int):
+async def finish_paid_flow(target, context: ContextTypes.DEFAULT_TYPE, user, user_id: int):
     data = user_states[user_id]["data"]
+
     summary = (
         "✅ PAYMENT CONFIRMATION RECEIVED\n\n"
         f"Payment method: {data.get('method', '-')}\n"
@@ -280,10 +338,26 @@ async def finish_paid_flow(target, user_id: int):
         f"TOC2.Cloud Email: {data.get('email', '-')}\n"
         f"Screenshot received: {data.get('screenshot', '-')}\n"
         f"Extra info: {data.get('extra', '-')}\n\n"
-        "Support will review your payment confirmation.\n\n"
-        f"If needed, also contact:\n📧 {SUPPORT_EMAIL}\n📩 {SUPPORT_TELEGRAM}"
+        "⏳ Status: Pending Review\n\n"
+        "Your payment confirmation has been received and is now under review.\n"
+        "Support will verify it and contact you if needed.\n\n"
+        f"If urgent, also contact:\n📧 {SUPPORT_EMAIL}\n📩 {SUPPORT_TELEGRAM}"
     )
+
+    admin_summary = (
+        "🔥 NEW PAYMENT CONFIRMATION\n\n"
+        f"User ID: {user.id}\n"
+        f"Telegram: {safe_username(user)}\n"
+        f"Payment method: {data.get('method', '-')}\n"
+        f"TOC Username: {data.get('username', '-')}\n"
+        f"TOC2.Cloud Email: {data.get('email', '-')}\n"
+        f"Screenshot received: {data.get('screenshot', '-')}\n"
+        f"Extra info: {data.get('extra', '-')}"
+    )
+
     await target.reply_text(summary, reply_markup=main_menu_keyboard())
+    await notify_admin_text(context, admin_summary)
+
     print(f"[PAID FLOW COMPLETE] user={user_id} data={data}")
     clear_user_state(user_id)
 
@@ -309,23 +383,38 @@ async def ask_support_details(target):
     )
 
 
-async def finish_support_flow(target, user_id: int):
+async def finish_support_flow(target, context: ContextTypes.DEFAULT_TYPE, user, user_id: int):
     data = user_states[user_id]["data"]
+
     summary = (
         "🆘 SUPPORT REQUEST RECEIVED\n\n"
         f"Issue type: {data.get('category', '-')}\n"
         f"TOC Username: {data.get('username', '-')}\n"
         f"TOC2.Cloud Email: {data.get('email', '-')}\n"
         f"Details: {data.get('details', '-')}\n\n"
-        "Your request has been recorded.\n\n"
+        "⏳ Status: Pending Review\n\n"
+        "Your support request has been received and is now under review.\n\n"
         f"If urgent, also contact:\n📧 {SUPPORT_EMAIL}\n📩 {SUPPORT_TELEGRAM}"
     )
+
+    admin_summary = (
+        "🆘 NEW SUPPORT REQUEST\n\n"
+        f"User ID: {user.id}\n"
+        f"Telegram: {safe_username(user)}\n"
+        f"Issue type: {data.get('category', '-')}\n"
+        f"TOC Username: {data.get('username', '-')}\n"
+        f"TOC2.Cloud Email: {data.get('email', '-')}\n"
+        f"Details: {data.get('details', '-')}"
+    )
+
     await target.reply_text(summary, reply_markup=main_menu_keyboard())
+    await notify_admin_text(context, admin_summary)
+
     print(f"[SUPPORT FLOW COMPLETE] user={user_id} data={data}")
     clear_user_state(user_id)
 
 
-async def handle_paid_text(update: Update, user_id: int, text: str):
+async def handle_paid_text(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, text: str):
     state = user_states[user_id]
     step = state["step"]
 
@@ -339,17 +428,12 @@ async def handle_paid_text(update: Update, user_id: int, text: str):
         state["step"] = "screenshot"
         await ask_paid_screenshot(update.message)
 
-    elif step == "screenshot":
-        state["data"]["screenshot"] = text
-        state["step"] = "extra"
-        await ask_paid_extra(update.message)
-
     elif step == "extra":
         state["data"]["extra"] = text
-        await finish_paid_flow(update.message, user_id)
+        await finish_paid_flow(update.message, context, update.effective_user, user_id)
 
 
-async def handle_support_text(update: Update, user_id: int, text: str):
+async def handle_support_text(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, text: str):
     state = user_states[user_id]
     step = state["step"]
 
@@ -365,7 +449,7 @@ async def handle_support_text(update: Update, user_id: int, text: str):
 
     elif step == "details":
         state["data"]["details"] = text
-        await finish_support_flow(update.message, user_id)
+        await finish_support_flow(update.message, context, update.effective_user, user_id)
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -399,12 +483,12 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
         clear_user_state(user.id)
         await send_support_intro(query.message)
 
-    elif data == "member":
-        clear_user_state(user.id)
-        await send_member(query.message)
-
     elif data == "already_paid":
         await start_paid_flow(query.message, user.id)
+
+    elif data == "candidverse":
+        clear_user_state(user.id)
+        await send_candidverse(query.message)
 
     elif data == "paid_method_usdt":
         user_states[user.id]["data"]["method"] = "USDT"
@@ -464,12 +548,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
 
-    if user_id in user_states and user_states[user_id]["flow"] == "paid" and user_states[user_id]["step"] == "screenshot":
-        if update.message.photo:
-            user_states[user_id]["data"]["screenshot"] = "photo received"
-            user_states[user_id]["step"] = "extra"
-            await ask_paid_extra(update.message)
-            return
+    if user_id in user_states:
+        flow = user_states[user_id]["flow"]
+        step = user_states[user_id]["step"]
+
+        if flow == "paid" and step == "screenshot":
+            if update.message.photo:
+                state = user_states[user_id]
+                state["data"]["screenshot"] = "photo received"
+                photo_file_id = update.message.photo[-1].file_id
+
+                admin_caption = (
+                    "📸 PAYMENT SCREENSHOT RECEIVED\n\n"
+                    f"User ID: {user.id}\n"
+                    f"Telegram: {safe_username(user)}\n"
+                    f"Payment method: {state['data'].get('method', '-')}\n"
+                    f"TOC Username: {state['data'].get('username', '-')}\n"
+                    f"TOC2.Cloud Email: {state['data'].get('email', '-')}"
+                )
+
+                await notify_admin_photo(context, photo_file_id, admin_caption)
+
+                state["step"] = "extra"
+                await ask_paid_extra(update.message)
+                return
 
     if update.message.text:
         text = update.message.text.lower().strip()
@@ -477,11 +579,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if user_id in user_states:
             flow = user_states[user_id]["flow"]
+
             if flow == "paid":
-                await handle_paid_text(update, user_id, update.message.text.strip())
+                await handle_paid_text(update, context, user_id, update.message.text.strip())
                 return
+
             elif flow == "support":
-                await handle_support_text(update, user_id, update.message.text.strip())
+                await handle_support_text(update, context, user_id, update.message.text.strip())
                 return
 
         if contains_any(text, BUY_WORDS):
@@ -490,10 +594,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await send_crypto(update.message)
         elif contains_any(text, CASHAPP_WORDS):
             await send_cashapp(update.message)
-        elif contains_any(text, MEMBER_WORDS):
-            await send_member(update.message)
         elif contains_any(text, HELP_WORDS):
             await send_support_intro(update.message)
+        elif "candidverse" in text or "thecandidverse" in text:
+            await send_candidverse(update.message)
         else:
             await send_welcome(update.message)
 

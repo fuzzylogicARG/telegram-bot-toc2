@@ -15,6 +15,8 @@ ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 if not TOKEN:
     raise ValueError("Falta BOT_TOKEN")
 
+BOT_USERNAME = "toc_support_bot"  # sin @
+
 USDT_LINK = "https://s.binance.com/iXbyQcVL"
 BTC_LINK = "https://s.binance.com/xuzlIvp2"
 CANDIDVERSE_49_LINK = "https://s.binance.com/ALQ8lAU1"
@@ -62,6 +64,16 @@ def contains_any(text: str, words: list[str]) -> bool:
 
 def safe_username(user) -> str:
     return f"@{user.username}" if user.username else "No username"
+
+
+def is_group(chat) -> bool:
+    return chat.type in ["group", "supergroup"]
+
+
+def private_start_link(param: str = "") -> str:
+    if param:
+        return f"https://t.me/{BOT_USERNAME}?start={param}"
+    return f"https://t.me/{BOT_USERNAME}"
 
 
 def main_menu_keyboard() -> InlineKeyboardMarkup:
@@ -152,6 +164,18 @@ async def notify_admin_photo(context: ContextTypes.DEFAULT_TYPE, photo_file_id: 
         await context.bot.send_photo(chat_id=ADMIN_CHAT_ID, photo=photo_file_id, caption=caption)
     except Exception as e:
         print(f"[ADMIN PHOTO ERROR] {e}")
+
+
+async def send_private_redirect(target, param: str = "start"):
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔒 Continue in Private", url=private_start_link(param))]
+    ])
+
+    await target.reply_text(
+        "🔒 For privacy and security, please continue in private chat.\n\n"
+        "Your username, email, payment details, and screenshots should not be sent in the group.",
+        reply_markup=keyboard
+    )
 
 
 async def send_welcome(target):
@@ -547,7 +571,27 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     print(f"[START] user={user.id} username={user.username}")
     clear_user_state(user.id)
-    await send_welcome(update.message)
+
+    start_param = ""
+    if context.args:
+        start_param = context.args[0].lower().strip()
+
+    if start_param == "buy":
+        await send_buy(update.message)
+    elif start_param == "paid":
+        await start_paid_flow(update.message, user.id)
+    elif start_param == "crypto":
+        await send_crypto(update.message)
+    elif start_param == "cashapp":
+        await send_cashapp(update.message)
+    elif start_param == "support":
+        await send_support_intro(update.message)
+    elif start_param == "candidverse":
+        await send_candidverse(update.message)
+    elif start_param == "guidelines":
+        await send_guidelines(update.message)
+    else:
+        await send_welcome(update.message)
 
 
 async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -557,6 +601,25 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = query.from_user
     data = query.data
     print(f"[BUTTON] user={user.id} username={user.username} action={data}")
+
+    if is_group(query.message.chat):
+        if data == "buy":
+            await send_private_redirect(query.message, "buy")
+        elif data == "already_paid":
+            await send_private_redirect(query.message, "paid")
+        elif data == "crypto":
+            await send_private_redirect(query.message, "crypto")
+        elif data == "cashapp":
+            await send_private_redirect(query.message, "cashapp")
+        elif data == "help":
+            await send_private_redirect(query.message, "support")
+        elif data == "candidverse":
+            await send_private_redirect(query.message, "candidverse")
+        elif data == "guidelines":
+            await send_private_redirect(query.message, "guidelines")
+        else:
+            await send_private_redirect(query.message, "start")
+        return
 
     if data == "buy":
         clear_user_state(user.id)
@@ -642,6 +705,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = update.effective_user
     user_id = user.id
+
+    if is_group(update.effective_chat):
+        if update.message.text:
+            text = update.message.text.lower().strip()
+
+            if contains_any(text, BUY_WORDS):
+                await send_private_redirect(update.message, "buy")
+            elif contains_any(text, CRYPTO_WORDS):
+                await send_private_redirect(update.message, "crypto")
+            elif contains_any(text, CASHAPP_WORDS):
+                await send_private_redirect(update.message, "cashapp")
+            elif contains_any(text, HELP_WORDS):
+                await send_private_redirect(update.message, "support")
+            elif "candidverse" in text or "thecandidverse" in text:
+                await send_private_redirect(update.message, "candidverse")
+            elif "guidelines" in text or "rules" in text:
+                await send_private_redirect(update.message, "guidelines")
+            else:
+                await send_private_redirect(update.message, "start")
+        else:
+            await send_private_redirect(update.message, "start")
+        return
 
     if user_id in user_states:
         flow = user_states[user_id]["flow"]

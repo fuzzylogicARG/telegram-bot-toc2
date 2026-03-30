@@ -26,7 +26,6 @@ SUPPORT_TELEGRAM = "@bermeloh2"
 QR_CRYPTO = "qr.png"
 QR_CASHAPP = "qr2.png"
 
-# Estados simples en memoria
 user_states = {}
 
 BUY_WORDS = [
@@ -275,38 +274,28 @@ async def send_guidelines(target):
         "Effective: March 26, 2026\n\n"
         "By accessing TOC, you agree to all rules, systems, and enforcement policies.\n"
         "Access is conditional and may be revoked at any time.\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "⚙ SYSTEM SHIFT\n"
         "• The point system is permanently discontinued\n"
         "• No earning, buying, or redeeming points\n"
         "• Platform operates through paid memberships, contests, licensing and partnerships\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "💳 POINT CONVERSIONS\n"
         "• Purchased points may be converted to membership upon request\n"
         "• Non-shooter points hold no monetary value\n"
         "• Shooter conversions are paused until June 2026\n\n"
         f"Requests:\n📧 {SUPPORT_EMAIL}\n📩 https://t.me/TOC_TCV_service_requests\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "💸 PAYMENTS & SHOOTER PAUSE\n"
         "• Shooter payouts paused until June 2026\n"
         "• Cause: chargebacks, fraud, processor instability\n"
         "• Temporary compensation may include exposure, placement and licensing\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "🏆 CONTEST SYSTEM\n"
         "• Shooters are rewarded via contests only\n"
         "• Formats may include Best Walking, Best POV, Best Creative and seasonal features\n"
         "• Rewards, when active, may include Cash App or Crypto\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "🔓 ACCESS MODEL\n"
         "Free users:\n"
         "• Preview only\n"
@@ -316,9 +305,7 @@ async def send_guidelines(target):
         "• Downloads\n"
         "• Cloud + clubs\n"
         "• No hidden unlock systems\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "👤 MEMBERSHIPS\n"
         "Standard:\n"
         "• 50GB cloud\n"
@@ -331,18 +318,14 @@ async def send_guidelines(target):
         "• No wait\n"
         "• Hall of Fame + hidden clubs\n\n"
         "Pricing may scale by account age.\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "☁ CLOUD RULES\n"
         "• Membership required\n"
         "• Same email required\n"
         "• Activation: 0–4 hours\n"
         "• Abuse may result in restriction\n"
         "• Limits enforced by tier\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "🎥 SHOOTERS & CONTRIBUTORS\n"
         "Shooters:\n"
         "• Must upload original content\n"
@@ -352,18 +335,14 @@ async def send_guidelines(target):
         "• Must own rights to content\n"
         "• Accept full liability\n"
         "• Grant TOC a license to display and promote uploaded material\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "🚫 ENFORCEMENT\n"
         "Immediate permanent ban for:\n"
         "• Leaks / reselling / sharing\n"
         "• Multiple accounts\n"
         "• Chargebacks\n\n"
         "Access is a privilege.\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "🛡 ADMIN AUTHORITY\n"
         "TOC may:\n"
         "• Modify rules\n"
@@ -371,15 +350,11 @@ async def send_guidelines(target):
         "• Change pricing\n"
         "• Remove content\n\n"
         "All decisions are final.\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "⚖ LIABILITY\n"
         "Users are responsible for all actions and content.\n"
         "TOC is not liable for user-submitted material.\n\n"
-
         "━━━━━━━━━━━━━━━\n\n"
-
         "FINAL STATEMENT\n"
         "TOC exists to protect paying members and creators.\n"
         "If you follow the system, you stay.\n"
@@ -475,7 +450,6 @@ async def finish_paid_flow(target, context: ContextTypes.DEFAULT_TYPE, user, use
 
     await target.reply_text(summary, reply_markup=main_menu_keyboard())
     await notify_admin_text(context, admin_summary)
-
     print(f"[PAID FLOW COMPLETE] user={user_id} data={data}")
     clear_user_state(user_id)
 
@@ -527,7 +501,6 @@ async def finish_support_flow(target, context: ContextTypes.DEFAULT_TYPE, user, 
 
     await target.reply_text(summary, reply_markup=main_menu_keyboard())
     await notify_admin_text(context, admin_summary)
-
     print(f"[SUPPORT FLOW COMPLETE] user={user_id} data={data}")
     clear_user_state(user_id)
 
